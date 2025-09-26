@@ -4,7 +4,7 @@ use std::fmt::Display;
 pub enum RustyDbErr {
     KeyNotFound(String),
     IoError(std::io::Error),
-    SerializationError(String),
+    SerializationError(&str, &str),
 }
 
 impl Display for RustyDbErr {
@@ -12,7 +12,9 @@ impl Display for RustyDbErr {
         match self {
             RustyDbErr::KeyNotFound(key) => write!(f, "Key not found: {}", key),
             RustyDbErr::IoError(error) => write!(f, "IO error: {}", error),
-            RustyDbErr::SerializationError(msg) => write!(f, "Serialization Error: {}", msg),
+            RustyDbErr::SerializationError(key, val) => {
+                write!(f, "Serialization Error: failed to insert {}:{}", key, val)
+            }
         }
     }
 }

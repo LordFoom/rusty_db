@@ -20,28 +20,28 @@ impl RustyDb {
             .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()))
     }
 
-    fn put(&mut self, key: String, val: String) {
-        self.data
-            .insert(key, val)
-            .ok_or_else(|| RustyDbErr::SerializationError(key, val));
+    fn put(&mut self, key: String, val: String) -> Result<()> {
+        self.data.insert(key.clone(), val.clone());
+        Ok(())
+        // .ok_or_else(|| RustyDbErr::SerializationError(key, val))
     }
 
-    fn delete(&mut self, key: &str) {
+    fn delete(&mut self, key: &str) -> Result<String> {
         self.data
             .remove(key)
-            .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()));
+            .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::RustyDb;
+    use super::*;
 
     #[test]
-    fn test_put_and_get() {
+    fn test_put_and_get() -> Result<()> {
         let mut db = RustyDb::new();
-        db.put("key1".to_string(), "val1".to_string());
-        assert_eq!(Ok(_), db.get("key1"));
-        assert_eq!(Some(&"val1".to_string()), db.get("key1"));
+        db.put("key1".to_string(), "val1".to_string())?;
+        assert_eq!(Ok(&"val1".to_string()), db.get("key1"));
+        Ok(())
     }
 }

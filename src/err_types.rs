@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum RustyDbErr {
     KeyNotFound(String),
-    IoError(std::io::Error),
-    SerializationError(&str, &str),
+    IoError(String),
+    SerializationError(String, String),
 }
 
 impl Display for RustyDbErr {

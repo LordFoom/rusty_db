@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 
-use bincode::{Decode, Encode, config, encode_to_vec};
+use bincode::{Decode, Encode, config, decode_from_reader, encode_to_vec};
 
 use crate::err_types::RustyDbErr;
 type Result<T> = std::result::Result<T, RustyDbErr>;
@@ -45,6 +45,17 @@ impl RustyDb {
 
         fs::write(&self.file_path, encoded).map_err(|e| RustyDbErr::IoError(e.to_string()))?;
 
+        Ok(())
+    }
+
+    pub fn load_from_disk(&mut self) -> Result<()> {
+        let config = config::standard();
+        let data = fs::read(&self.file_path).map_err(|e| RustyDbErr::IoError(e.to_string()))?;
+        let (decoded, _len): (HashMap<String, String>, usize) =
+            bincode::decode_from_slice(&data, config)
+                .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
+
+        self.data = decoded;
         Ok(())
     }
 }

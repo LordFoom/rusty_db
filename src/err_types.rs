@@ -4,16 +4,18 @@ use std::fmt::Display;
 pub enum RustyDbErr {
     KeyNotFound(String),
     IoError(String),
-    SerializationError(String, String),
+    SerializationError(String),
 }
 
 impl Display for RustyDbErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RustyDbErr::KeyNotFound(key) => write!(f, "Key not found: {}", key),
-            RustyDbErr::IoError(error) => write!(f, "IO error: {}", error),
-            RustyDbErr::SerializationError(key, val) => {
-                write!(f, "Serialization Error: failed to insert {}:{}", key, val)
+            RustyDbErr::IoError(err_msg) => {
+                write!(f, "IO error - failed to save to disk {}", err_msg)
+            }
+            RustyDbErr::SerializationError(err_msg) => {
+                write!(f, "Serialization Error: failed to encode data: {}", err_msg)
             }
         }
     }

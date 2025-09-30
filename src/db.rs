@@ -1,35 +1,51 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
+
+use bincode::{Decode, Encode, config, encode_to_vec};
 
 use crate::err_types::RustyDbErr;
 type Result<T> = std::result::Result<T, RustyDbErr>;
 
+#[derive(Debug, Encode, Decode)]
 struct RustyDb {
     data: HashMap<String, String>,
+    ///DB location on the filesyystem
+    file_path: String,
 }
 
 impl RustyDb {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             data: HashMap::new(),
+            file_path: String::new(),
         }
     }
 
-    fn get(&self, key: &str) -> Result<&String> {
+    pub fn get(&self, key: &str) -> Result<&String> {
         self.data
             .get(key)
             .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()))
     }
 
-    fn put(&mut self, key: String, val: String) -> Result<()> {
+    pub fn put(&mut self, key: String, val: String) -> Result<()> {
         self.data.insert(key.clone(), val.clone());
         Ok(())
         // .ok_or_else(|| RustyDbErr::SerializationError(key, val))
     }
 
-    fn delete(&mut self, key: &str) -> Result<String> {
+    pub fn delete(&mut self, key: &str) -> Result<String> {
         self.data
             .remove(key)
             .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()))
+    }
+
+    pub fn save_to_disk(&mut self) -> Result<()> {
+        let config = config::standard();
+        let encoded = encode_to_vec(&self.data, config)
+            .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
+
+        fs::write(&self.file_path, encoded).map_err(|e| RustyDbErr::IoError(e.to_string()))?;
+
+        Ok(())
     }
 }
 

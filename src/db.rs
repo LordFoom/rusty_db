@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, path::Path};
 
 use bincode::{Decode, Encode, config, decode_from_reader, encode_to_vec};
 
@@ -13,11 +13,15 @@ struct RustyDb {
 }
 
 impl RustyDb {
-    pub fn new() -> Self {
-        Self {
+    pub fn new(file_path: &str) -> Result<Self> {
+        let mut rusty_db = Self {
             data: HashMap::new(),
-            file_path: String::new(),
+            file_path: file_path.to_string(),
+        };
+        if Path::new(file_path).exists() {
+            rusty_db.load_from_disk()?;
         }
+        Ok(rusty_db)
     }
 
     pub fn get(&self, key: &str) -> Result<&String> {
@@ -28,14 +32,18 @@ impl RustyDb {
 
     pub fn put(&mut self, key: String, val: String) -> Result<()> {
         self.data.insert(key.clone(), val.clone());
+        self.save_to_disk()?;
         Ok(())
         // .ok_or_else(|| RustyDbErr::SerializationError(key, val))
     }
 
     pub fn delete(&mut self, key: &str) -> Result<String> {
-        self.data
+        let deleted = self
+            .data
             .remove(key)
-            .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()))
+            .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()));
+        self.save_to_disk()?;
+        deleted
     }
 
     pub fn save_to_disk(&mut self) -> Result<()> {

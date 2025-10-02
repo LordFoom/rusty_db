@@ -72,9 +72,17 @@ impl RustyDb {
 mod test {
     use super::*;
 
+    fn test_db_path(name: &str) -> String {
+        format!("/tmp/rusty_db_{}.bin", name)
+    }
+
+    fn cleanup(path: &str) {
+        fs::remove_file(path);
+    }
+
     #[test]
     fn test_put_and_get() -> Result<()> {
-        let mut db = RustyDb::new();
+        let mut db = RustyDb::new("basic")?;
         db.put("key1".to_string(), "val1".to_string())?;
         assert_eq!(Ok(&"val1".to_string()), db.get("key1"));
         Ok(())

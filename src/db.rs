@@ -81,6 +81,14 @@ mod test {
     }
 
     #[test]
+    fn test_get_non_existent_key() {
+        let path = test_db_path("nonexistent");
+        cleanup(&path);
+        let db = RustyDb::new("nonexistent").unwrap();
+        let unval = db.get("missing");
+        assert_eq!(unval, Err(RustyDbErr::KeyNotFound("missing".to_string())));
+    }
+    #[test]
     fn test_put_and_get() -> Result<()> {
         let mut db = RustyDb::new("basic")?;
         db.put("key1".to_string(), "val1".to_string())?;

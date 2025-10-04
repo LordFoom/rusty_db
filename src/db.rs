@@ -77,7 +77,7 @@ mod test {
     }
 
     fn cleanup(path: &str) {
-        fs::remove_file(path);
+        fs::remove_file(path).unwrap();
     }
 
     #[test]

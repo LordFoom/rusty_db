@@ -22,3 +22,18 @@ impl Display for RustyDbErr {
 }
 
 impl std::error::Error for RustyDbErr {}
+
+#[derive(Debug, PartialEq)]
+pub enum ParseError {
+    InvalidSyntax(String),
+    MissingKeyWord(String),
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            ParseError::InvalidSyntax(msg) => write!(f, "Invalid Syntax: {}", msg),
+            ParseError::MissingKeyWord(msg) => write!(f, "Missing Keyword: {}", msg),
+        }
+    }
+}

@@ -4,4 +4,11 @@ pub enum Command {
     Del { key: String },
 }
 
-pub fn parse() {}
+///TODO String or &str?
+pub fn parse(input: &str) -> Result<()> {
+    //split into components (tokens)
+    //check command is first token
+    //get datastore
+    //return value or error if not present
+    Ok(())
+}

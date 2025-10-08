@@ -19,7 +19,7 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
         "GET" => {
             if parts.len() != 2 {
                 return Err(ParseError::WrongNumberOfArguments(format!(
-                    "Get requires 2 arguments,incl. command; you had :{}",
+                    "GET requires 2 arguments,incl. command; you had :{}",
                     parts.len()
                 )));
             }
@@ -27,8 +27,29 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
                 key: parts[1].to_string(),
             });
         }
-        "SET" => println!("SET key, val"),
-        "DEL" => println!("DEL key"),
+        "SET" => {
+            if parts.len() != 3 {
+                return Err(ParseError::WrongNumberOfArguments(format!(
+                    "SET requires 3 arguments, including command; you had: {}",
+                    parts.len()
+                )));
+            }
+            return Ok(Command::Set {
+                key: parts[1].to_string(),
+                val: parts[2].to_string(),
+            });
+        }
+        "DEL" => {
+            if parts.len() != 2 {
+                return Err(ParseError::WrongNumberOfArguments(format!(
+                    "DEL requires 2 arguments,incl. command; you had :{}",
+                    parts.len()
+                )));
+            }
+            return Ok(Command::Del {
+                key: parts[1].to_string(),
+            });
+        }
         other => {
             return Err(ParseError::InvalidCommand(format!(
                 "Uknown command: {other}"

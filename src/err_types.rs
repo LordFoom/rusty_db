@@ -5,6 +5,9 @@ pub enum RustyDbErr {
     KeyNotFound(String),
     IoError(String),
     SerializationError(String),
+    InvalidQuery(String),
+    TableNotFound(String),
+    TableExists(String),
 }
 
 impl Display for RustyDbErr {
@@ -17,6 +20,9 @@ impl Display for RustyDbErr {
             RustyDbErr::SerializationError(err_msg) => {
                 write!(f, "Serialization Error: failed to encode data: {}", err_msg)
             }
+            RustyDbErr::InvalidQuery(err_msg) => write!(f, "Invalid Query Error: {}", err_msg),
+            RustyDbErr::TableNotFound(err_msg) => write!(f, "Table not found: {}", err_msg),
+            RustyDbErr::TableExists(err_msg) => write!(f, "Table Exists: {}", err_msg),
         }
     }
 }

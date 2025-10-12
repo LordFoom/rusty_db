@@ -1,9 +1,19 @@
 use crate::err_types::ParseError;
 
 pub enum Command {
-    Get { key: String },
-    Set { key: String, val: String },
-    Del { key: String },
+    Get {
+        table: String,
+        key: String,
+    },
+    Set {
+        table: String,
+        key: String,
+        val: String,
+    },
+    Del {
+        table: String,
+        key: String,
+    },
 }
 
 ///TODO String or &str?
@@ -17,37 +27,40 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
     let command = parts[0].to_uppercase();
     match command.as_str() {
         "GET" => {
-            if parts.len() != 2 {
+            if parts.len() != 3 {
                 return Err(ParseError::WrongNumberOfArguments(format!(
-                    "GET requires 2 arguments,incl. command; you had :{}",
+                    "GET requires 2 arguments, table and key, you had:{}",
                     parts.len()
                 )));
             }
             return Ok(Command::Get {
-                key: parts[1].to_string(),
+                table: parts[1].to_string(),
+                key: parts[2].to_string(),
             });
         }
         "SET" => {
             if parts.len() != 3 {
                 return Err(ParseError::WrongNumberOfArguments(format!(
-                    "SET requires 3 arguments, including command; you had: {}",
+                    "SET requires 3 arguments,table, key val; you had: {}",
                     parts.len()
                 )));
             }
             return Ok(Command::Set {
-                key: parts[1].to_string(),
-                val: parts[2].to_string(),
+                table: parts[1].to_string(),
+                key: parts[2].to_string(),
+                val: parts[3].to_string(),
             });
         }
         "DEL" => {
             if parts.len() != 2 {
                 return Err(ParseError::WrongNumberOfArguments(format!(
-                    "DEL requires 2 arguments,incl. command; you had :{}",
+                    "DEL requires 2 arguments,table, key, you had: {}",
                     parts.len()
                 )));
             }
             return Ok(Command::Del {
-                key: parts[1].to_string(),
+                table: parts[1].to_string(),
+                key: parts[2].to_string(),
             });
         }
         other => {
@@ -59,4 +72,25 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
 
     //get datastore
     //return value or error if not present
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::err_types::RustyDbErr;
+
+    use super::*;
+
+    #[test]
+    fn test_parse_get() {
+        let input = "get table1 key1";
+        let result = parse(input);
+        assert!(result.is_ok());
+
+        if let Ok(Command::Get { table, key }) = result {
+            assert_eq!("table1", table);
+            assert_eq!("key1", key);
+        } else {
+            panic!("Expected Command::Get from {}", input);
+        }
+    }
 }

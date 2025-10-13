@@ -36,8 +36,9 @@ impl RustyDb {
 
     pub fn put(&mut self, table: String, key: String, val: String) -> Result<()> {
         self.tables
-            .get_mut(&table)
-            .ok_or_else(|| RustyDbErr::TableNotFound(table.to_string()))?
+            .entry(table)
+            .or_insert(HashMap::new())
+            // .ok_or_else(|| RustyDbErr::TableNotFound(table.to_string()))?
             .insert(key, val);
         self.save_to_disk()?;
         Ok(())
@@ -86,15 +87,21 @@ mod test {
     }
 
     fn cleanup(path: &str) {
-        fs::remove_file(path).unwrap();
+        fs::remove_file(path).ok();
     }
 
     #[test]
     fn test_get_non_existent_key() {
         let path = test_db_path("nonexistent");
         cleanup(&path);
-        let db = RustyDb::new("nonexistent").unwrap();
-        let unval = db.get("test_table", "omissing");
+        let mut db = RustyDb::new(&path).unwrap();
+        db.put(
+            "test_table".to_string(),
+            "existing".to_string(),
+            "this_is_my_key".to_string(),
+        )
+        .unwrap();
+        let unval = db.get("test_table", "missing");
         assert_eq!(unval, Err(RustyDbErr::KeyNotFound("missing".to_string())));
     }
     #[test]

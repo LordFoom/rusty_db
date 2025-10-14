@@ -104,9 +104,12 @@ mod test {
         let unval = db.get("test_table", "missing");
         assert_eq!(unval, Err(RustyDbErr::KeyNotFound("missing".to_string())));
     }
+
     #[test]
     fn test_put_and_get() -> Result<()> {
-        let mut db = RustyDb::new("basic")?;
+        let path = test_db_path("basic");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
         db.put(
             "test_table".to_string(),
             "key1".to_string(),

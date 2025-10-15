@@ -14,6 +14,9 @@ pub enum Command {
         table: String,
         key: String,
     },
+    CreateTable {
+        table_name: String,
+    },
 }
 
 ///TODO String or &str?
@@ -41,7 +44,7 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
         "SET" => {
             if parts.len() != 3 {
                 return Err(ParseError::WrongNumberOfArguments(format!(
-                    "SET requires 3 arguments,table, key val; you had: {}",
+                    "SET requires 3 arguments,table, key, val; you had: {}",
                     parts.len()
                 )));
             }
@@ -52,7 +55,7 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
             });
         }
         "DEL" => {
-            if parts.len() != 2 {
+            if parts.len() != 3 {
                 return Err(ParseError::WrongNumberOfArguments(format!(
                     "DEL requires 2 arguments,table, key, you had: {}",
                     parts.len()
@@ -61,6 +64,17 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
             return Ok(Command::Del {
                 table: parts[1].to_string(),
                 key: parts[2].to_string(),
+            });
+        }
+        "CREATE" => {
+            if parts.len() != 2 {
+                return Err(ParseError::WrongNumberOfArguments(format!(
+                    "CREATE requires 1 arguments,table_name: {}",
+                    parts.len()
+                )));
+            }
+            return Ok(Command::CreateTable {
+                table_name: parts[1].to_string(),
             });
         }
         other => {

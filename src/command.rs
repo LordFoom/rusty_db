@@ -17,6 +17,10 @@ pub enum Command {
     CreateTable {
         table_name: String,
     },
+    DropTable {
+        table_name: String,
+    },
+    ListTables,
 }
 
 ///TODO String or &str?
@@ -74,6 +78,17 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
                 )));
             }
             return Ok(Command::CreateTable {
+                table_name: parts[1].to_string(),
+            });
+        }
+        "DROP" => {
+            if parts.len() != 2 {
+                return Err(ParseError::WrongNumberOfArguments(format!(
+                    "DROP requires 1 arguments,table_name: {}",
+                    parts.len()
+                )));
+            }
+            return Ok(Command::DropTable {
                 table_name: parts[1].to_string(),
             });
         }

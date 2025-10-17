@@ -1,4 +1,4 @@
-use crate::err_types::ParseError;
+use crate::err_types::{ParseError, RustyDbErr};
 
 pub enum Command {
     Get {
@@ -34,24 +34,14 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
     let command = parts[0].to_uppercase();
     match command.as_str() {
         "GET" => {
-            if parts.len() != 3 {
-                return Err(ParseError::WrongNumberOfArguments(format!(
-                    "GET requires 2 arguments, table and key, you had:{}",
-                    parts.len()
-                )));
-            }
+            check_len(&parts, 3, "GET requires 2 arguments, table and key")?;
             return Ok(Command::Get {
                 table: parts[1].to_string(),
                 key: parts[2].to_string(),
             });
         }
         "SET" => {
-            if parts.len() != 3 {
-                return Err(ParseError::WrongNumberOfArguments(format!(
-                    "SET requires 3 arguments,table, key, val; you had: {}",
-                    parts.len()
-                )));
-            }
+            check_len(&parts, 3, "SET requires 3 arguments,table, key, val")?;
             return Ok(Command::Set {
                 table: parts[1].to_string(),
                 key: parts[2].to_string(),
@@ -59,39 +49,25 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
             });
         }
         "DEL" => {
-            if parts.len() != 3 {
-                return Err(ParseError::WrongNumberOfArguments(format!(
-                    "DEL requires 2 arguments,table, key, you had: {}",
-                    parts.len()
-                )));
-            }
+            check_len(&parts, 3, "DEL requires 2 arguments,table, key")?;
             return Ok(Command::Del {
                 table: parts[1].to_string(),
                 key: parts[2].to_string(),
             });
         }
         "CREATE" => {
-            if parts.len() != 2 {
-                return Err(ParseError::WrongNumberOfArguments(format!(
-                    "CREATE requires 1 arguments,table_name: {}",
-                    parts.len()
-                )));
-            }
+            check_len(&parts, 2, "CREATE requires 1 arguments,table_name")?;
             return Ok(Command::CreateTable {
                 table_name: parts[1].to_string(),
             });
         }
         "DROP" => {
-            if parts.len() != 2 {
-                return Err(ParseError::WrongNumberOfArguments(format!(
-                    "DROP requires 1 arguments,table_name: {}",
-                    parts.len()
-                )));
-            }
+            check_len(&parts, 1, "DROP requires 1 arguments,table_name")?;
             return Ok(Command::DropTable {
                 table_name: parts[1].to_string(),
             });
         }
+        "LIST" => {}
         other => {
             return Err(ParseError::InvalidCommand(format!(
                 "Uknown command: {other}"
@@ -101,6 +77,17 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
 
     //get datastore
     //return value or error if not present
+}
+
+fn check_len(parts: &[&str], expected_num: usize, err_msg: &str) -> Result<(), ParseError> {
+    if parts.len() != expected_num {
+        return Err(ParseError::WrongNumberOfArguments(format!(
+            "{}! actual-> {}",
+            err_msg,
+            parts.len()
+        )));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

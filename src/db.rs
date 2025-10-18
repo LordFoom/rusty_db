@@ -63,6 +63,7 @@ impl RustyDb {
             return Err(RustyDbErr::TableExists(table_name.to_string()));
         }
         self.tables.insert(table_name.to_string(), HashMap::new());
+        self.save_to_disk()?;
         Ok(())
     }
 
@@ -71,7 +72,8 @@ impl RustyDb {
         if self.tables.contains_key(table_name) {
             return Err(RustyDbErr::TableNotFound(table_name.to_string()));
         }
-        self.tables.remove(table_name.to_string());
+        self.tables.remove(table_name);
+        self.save_to_disk()?;
         Ok(())
     }
 

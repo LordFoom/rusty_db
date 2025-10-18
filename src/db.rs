@@ -45,6 +45,7 @@ impl RustyDb {
         // .ok_or_else(|| RustyDbErr::SerializationError(key, val))
     }
 
+    ///Delete a value from a table
     pub fn delete(&mut self, table: &str, key: &str) -> Result<String> {
         let deleted = self
             .tables
@@ -54,6 +55,24 @@ impl RustyDb {
             .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()))?;
         self.save_to_disk()?;
         Ok(deleted)
+    }
+
+    ///Create a table
+    pub fn create_table(&mut self, table_name: &str) -> Result<()> {
+        if self.tables.contains_key(table_name) {
+            return Err(RustyDbErr::TableExists(table_name.to_string()));
+        }
+        self.tables.insert(table_name.to_string(), HashMap::new());
+        Ok(())
+    }
+
+    ///Drop a table
+    pub fn drop_table(&mut self, table_name: &str) -> Result<()> {
+        if self.tables.contains_key(table_name) {
+            return Err(RustyDbErr::TableNotFound(table_name.to_string()));
+        }
+        self.tables.remove(table_name.to_string());
+        Ok(())
     }
 
     pub fn save_to_disk(&mut self) -> Result<()> {

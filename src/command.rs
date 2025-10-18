@@ -67,7 +67,10 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
                 table_name: parts[1].to_string(),
             });
         }
-        "LIST" => {}
+        "LIST" => {
+            check_len(&parts, 0, "LIST requires no arguments")?;
+            return Ok(Command::ListTables {});
+        }
         other => {
             return Err(ParseError::InvalidCommand(format!(
                 "Uknown command: {other}"

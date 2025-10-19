@@ -77,6 +77,11 @@ impl RustyDb {
         Ok(())
     }
 
+    ///List all the tables
+    pub fn list_tables(&self) -> Vec<String> {
+        self.tables.keys().map(|key| key.to_string()).collect()
+    }
+
     pub fn save_to_disk(&mut self) -> Result<()> {
         let config = config::standard();
         let encoded = encode_to_vec(&self.tables, config)

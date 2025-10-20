@@ -129,6 +129,7 @@ mod test {
         .unwrap();
         let unval = db.get("test_table", "missing");
         assert_eq!(unval, Err(RustyDbErr::KeyNotFound("missing".to_string())));
+        cleanup(&path);
     }
 
     #[test]
@@ -142,6 +143,186 @@ mod test {
             "val1".to_string(),
         )?;
         assert_eq!(Ok(&"val1".to_string()), db.get("test_table", "key1"));
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_from_nonexistent_table() {
+        let path = test_db_path("no_table");
+        cleanup(&path);
+        let db = RustyDb::new(&path).unwrap();
+        let result = db.get("missing_table", "key");
+        assert_eq!(
+            result,
+            Err(RustyDbErr::TableNotFound("missing_table".to_string()))
+        );
+        cleanup(&path);
+    }
+
+    #[test]
+    fn test_delete_key() -> Result<()> {
+        let path = test_db_path("delete");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
+        db.put(
+            "test_table".to_string(),
+            "key1".to_string(),
+            "val1".to_string(),
+        )?;
+        let deleted = db.delete("test_table", "key1")?;
+        assert_eq!(deleted, "val1");
+        assert_eq!(
+            db.get("test_table", "key1"),
+            Err(RustyDbErr::KeyNotFound("key1".to_string()))
+        );
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_delete_nonexistent_key() {
+        let path = test_db_path("delete_missing");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path).unwrap();
+        db.put(
+            "test_table".to_string(),
+            "key1".to_string(),
+            "val1".to_string(),
+        )
+        .unwrap();
+        let result = db.delete("test_table", "missing_key");
+        assert_eq!(
+            result,
+            Err(RustyDbErr::KeyNotFound("missing_key".to_string()))
+        );
+        cleanup(&path);
+    }
+
+    #[test]
+    fn test_delete_from_nonexistent_table() {
+        let path = test_db_path("delete_no_table");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path).unwrap();
+        let result = db.delete("missing_table", "key");
+        assert_eq!(
+            result,
+            Err(RustyDbErr::TableNotFound("missing_table".to_string()))
+        );
+        cleanup(&path);
+    }
+
+    #[test]
+    fn test_create_table() -> Result<()> {
+        let path = test_db_path("create_table");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
+        db.create_table("new_table")?;
+        let tables = db.list_tables();
+        assert!(tables.contains(&"new_table".to_string()));
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_create_existing_table() {
+        let path = test_db_path("create_existing");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path).unwrap();
+        db.create_table("test_table").unwrap();
+        let result = db.create_table("test_table");
+        assert_eq!(
+            result,
+            Err(RustyDbErr::TableExists("test_table".to_string()))
+        );
+        cleanup(&path);
+    }
+
+    #[test]
+    fn test_list_tables() -> Result<()> {
+        let path = test_db_path("list_tables");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
+        db.create_table("table1")?;
+        db.create_table("table2")?;
+        db.create_table("table3")?;
+        let tables = db.list_tables();
+        assert_eq!(tables.len(), 3);
+        assert!(tables.contains(&"table1".to_string()));
+        assert!(tables.contains(&"table2".to_string()));
+        assert!(tables.contains(&"table3".to_string()));
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_persistence() -> Result<()> {
+        let path = test_db_path("persistence");
+        cleanup(&path);
+        {
+            let mut db = RustyDb::new(&path)?;
+            db.put(
+                "users".to_string(),
+                "user1".to_string(),
+                "alice".to_string(),
+            )?;
+            db.put("users".to_string(), "user2".to_string(), "bob".to_string())?;
+        }
+        // Create a new instance and verify data persisted
+        {
+            let db = RustyDb::new(&path)?;
+            assert_eq!(db.get("users", "user1")?, &"alice".to_string());
+            assert_eq!(db.get("users", "user2")?, &"bob".to_string());
+        }
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_tables() -> Result<()> {
+        let path = test_db_path("multi_tables");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
+        db.put("users".to_string(), "id1".to_string(), "alice".to_string())?;
+        db.put(
+            "posts".to_string(),
+            "id1".to_string(),
+            "hello world".to_string(),
+        )?;
+        assert_eq!(db.get("users", "id1")?, &"alice".to_string());
+        assert_eq!(db.get("posts", "id1")?, &"hello world".to_string());
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_update_value() -> Result<()> {
+        let path = test_db_path("update");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
+        db.put(
+            "test_table".to_string(),
+            "key1".to_string(),
+            "val1".to_string(),
+        )?;
+        db.put(
+            "test_table".to_string(),
+            "key1".to_string(),
+            "val2".to_string(),
+        )?;
+        assert_eq!(db.get("test_table", "key1")?, &"val2".to_string());
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_empty_list_tables() -> Result<()> {
+        let path = test_db_path("empty_list");
+        cleanup(&path);
+        let db = RustyDb::new(&path)?;
+        let tables = db.list_tables();
+        assert_eq!(tables.len(), 0);
+        cleanup(&path);
         Ok(())
     }
 }

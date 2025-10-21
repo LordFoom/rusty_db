@@ -36,13 +36,11 @@ impl RustyDb {
 
     pub fn put(&mut self, table: String, key: String, val: String) -> Result<()> {
         self.tables
-            .entry(table)
-            .or_insert(HashMap::new())
-            // .ok_or_else(|| RustyDbErr::TableNotFound(table.to_string()))?
+            .get_mut(&table)
+            .ok_or_else(|| RustyDbErr::TableNotFound(table))?
             .insert(key, val);
         self.save_to_disk()?;
         Ok(())
-        // .ok_or_else(|| RustyDbErr::SerializationError(key, val))
     }
 
     ///Delete a value from a table
@@ -117,10 +115,44 @@ mod test {
     }
 
     #[test]
+    fn test_put_to_nonexistent_table() {
+        let path = test_db_path("put_no_table");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path).unwrap();
+        let result = db.put(
+            "missing_table".to_string(),
+            "key1".to_string(),
+            "val1".to_string(),
+        );
+        assert_eq!(
+            result,
+            Err(RustyDbErr::TableNotFound("missing_table".to_string()))
+        );
+        cleanup(&path);
+    }
+
+    #[test]
+    fn test_create_table_then_put() -> Result<()> {
+        let path = test_db_path("create_then_put");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
+        db.create_table("test_table")?;
+        db.put(
+            "test_table".to_string(),
+            "key1".to_string(),
+            "val1".to_string(),
+        )?;
+        assert_eq!(db.get("test_table", "key1")?, &"val1".to_string());
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
     fn test_get_non_existent_key() {
         let path = test_db_path("nonexistent");
         cleanup(&path);
         let mut db = RustyDb::new(&path).unwrap();
+        db.create_table("test_table").unwrap();
         db.put(
             "test_table".to_string(),
             "existing".to_string(),
@@ -137,6 +169,7 @@ mod test {
         let path = test_db_path("basic");
         cleanup(&path);
         let mut db = RustyDb::new(&path)?;
+        db.create_table("test_table")?;
         db.put(
             "test_table".to_string(),
             "key1".to_string(),
@@ -165,6 +198,7 @@ mod test {
         let path = test_db_path("delete");
         cleanup(&path);
         let mut db = RustyDb::new(&path)?;
+        db.create_table("test_table")?;
         db.put(
             "test_table".to_string(),
             "key1".to_string(),
@@ -185,6 +219,7 @@ mod test {
         let path = test_db_path("delete_missing");
         cleanup(&path);
         let mut db = RustyDb::new(&path).unwrap();
+        db.create_table("test_table").unwrap();
         db.put(
             "test_table".to_string(),
             "key1".to_string(),
@@ -261,6 +296,7 @@ mod test {
         cleanup(&path);
         {
             let mut db = RustyDb::new(&path)?;
+            db.create_table("users")?;
             db.put(
                 "users".to_string(),
                 "user1".to_string(),
@@ -268,7 +304,6 @@ mod test {
             )?;
             db.put("users".to_string(), "user2".to_string(), "bob".to_string())?;
         }
-        // Create a new instance and verify data persisted
         {
             let db = RustyDb::new(&path)?;
             assert_eq!(db.get("users", "user1")?, &"alice".to_string());
@@ -283,6 +318,8 @@ mod test {
         let path = test_db_path("multi_tables");
         cleanup(&path);
         let mut db = RustyDb::new(&path)?;
+        db.create_table("users")?;
+        db.create_table("posts")?;
         db.put("users".to_string(), "id1".to_string(), "alice".to_string())?;
         db.put(
             "posts".to_string(),
@@ -300,6 +337,7 @@ mod test {
         let path = test_db_path("update");
         cleanup(&path);
         let mut db = RustyDb::new(&path)?;
+        db.create_table("test_table")?;
         db.put(
             "test_table".to_string(),
             "key1".to_string(),
@@ -322,6 +360,34 @@ mod test {
         let db = RustyDb::new(&path)?;
         let tables = db.list_tables();
         assert_eq!(tables.len(), 0);
+        cleanup(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_puts_same_table() -> Result<()> {
+        let path = test_db_path("multi_puts");
+        cleanup(&path);
+        let mut db = RustyDb::new(&path)?;
+        db.create_table("test_table")?;
+        db.put(
+            "test_table".to_string(),
+            "key1".to_string(),
+            "val1".to_string(),
+        )?;
+        db.put(
+            "test_table".to_string(),
+            "key2".to_string(),
+            "val2".to_string(),
+        )?;
+        db.put(
+            "test_table".to_string(),
+            "key3".to_string(),
+            "val3".to_string(),
+        )?;
+        assert_eq!(db.get("test_table", "key1")?, &"val1".to_string());
+        assert_eq!(db.get("test_table", "key2")?, &"val2".to_string());
+        assert_eq!(db.get("test_table", "key3")?, &"val3".to_string());
         cleanup(&path);
         Ok(())
     }

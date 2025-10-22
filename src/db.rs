@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs, path::Path};
 
 use bincode::{Decode, Encode, config, decode_from_reader, encode_to_vec};
 
-use crate::err_types::RustyDbErr;
+use crate::{command::Command, err_types::RustyDbErr};
 type Result<T> = std::result::Result<T, RustyDbErr>;
 
 #[derive(Debug, Encode, Decode)]
@@ -14,6 +14,16 @@ struct RustyDb {
 }
 
 impl RustyDb {
+    pub fn execute(&mut self, cmd: Command) -> Result<String> {
+        match cmd {
+            Command::Get { table, key } => todo!(),
+            Command::Set { table, key, val } => todo!(),
+            Command::Del { table, key } => todo!(),
+            Command::CreateTable { table_name } => todo!(),
+            Command::DropTable { table_name } => todo!(),
+            Command::ListTables => todo!(),
+        }
+    }
     pub fn new(file_path: &str) -> Result<Self> {
         let mut rusty_db = Self {
             // data: HashMap::new(),

@@ -5,7 +5,7 @@ pub enum Command {
         table: String,
         key: String,
     },
-    Set {
+    Put {
         table: String,
         key: String,
         val: String,
@@ -42,7 +42,7 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
         }
         "SET" => {
             check_len(&parts, 3, "SET requires 3 arguments,table, key, val")?;
-            return Ok(Command::Set {
+            return Ok(Command::Put {
                 table: parts[1].to_string(),
                 key: parts[2].to_string(),
                 val: parts[3].to_string(),

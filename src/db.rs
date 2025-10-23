@@ -16,12 +16,33 @@ struct RustyDb {
 impl RustyDb {
     pub fn execute(&mut self, cmd: Command) -> Result<String> {
         match cmd {
-            Command::Get { table, key } => todo!(),
-            Command::Set { table, key, val } => todo!(),
-            Command::Del { table, key } => todo!(),
-            Command::CreateTable { table_name } => todo!(),
-            Command::DropTable { table_name } => todo!(),
-            Command::ListTables => todo!(),
+            Command::Get { table, key } => {
+                let val = self.get(&table, &key)?;
+                Ok(format!("{}", val))
+            }
+            Command::Put { table, key, val } => {
+                self.put(table, key, val)?;
+                Ok("Ok".to_string())
+            }
+            Command::Del { table, key } => {
+                let val = self.delete(&table, &key)?;
+                Ok(format!("{}", val))
+            }
+            Command::CreateTable { table_name } => {
+                self.create_table(&table_name)?;
+                Ok(format!("Created table {}", table_name))
+            }
+            Command::DropTable { table_name } => {
+                self.drop_table(&table_name)?;
+                Ok(format!("Dropped table {}", table_name))
+            }
+            Command::ListTables => {
+                let list_tables = self.list_tables();
+                if list_tables.is_empty() {
+                    return Ok("No tables found".to_string());
+                }
+                Ok(list_tables.join("\n"))
+            }
         }
     }
     pub fn new(file_path: &str) -> Result<Self> {

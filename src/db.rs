@@ -6,11 +6,11 @@ use crate::{command::Command, err_types::RustyDbErr};
 type Result<T> = std::result::Result<T, RustyDbErr>;
 
 #[derive(Debug, Encode, Decode)]
-struct RustyDb {
+pub struct RustyDb {
     // data: HashMap<String, String>,
-    tables: HashMap<String, HashMap<String, String>>,
+    pub tables: HashMap<String, HashMap<String, String>>,
     ///DB location on the filesyystem
-    file_path: String,
+    pub file_path: String,
 }
 
 impl RustyDb {

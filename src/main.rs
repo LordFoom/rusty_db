@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::db::RustyDb;
 
 mod command;
@@ -11,5 +13,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut db = RustyDb::new(".rusty.db")?;
     loop {
         //main cli loop
+        println!("rustydb>> ");
+        std::io::stdout().flush()?;
+
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+
+        //check for commands that aren't sql
+        match input {}
     }
 }

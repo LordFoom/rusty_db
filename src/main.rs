@@ -20,6 +20,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::io::stdin().read_line(&mut input)?;
 
         //check for commands that aren't sql
-        match input {}
+        match input.to_lowercase().as_str() {
+            "exit" | "quit" | "q" => {
+                "See you later, Space Cowboy"
+                break;
+            }
+            "help" => {
+                println!("TODO print help");
+                continue;
+            }
+            "" => {
+                continue;
+            }
+            _ => {}
+        }
+
+        match parse(input) {
+
+        }
+
+
     }
+    Ok(());
 }

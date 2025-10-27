@@ -1,4 +1,4 @@
-use crate::err_types::{ParseError, RustyDbErr};
+use crate::err_types::ParseError;
 
 pub enum Command {
     Get {
@@ -41,7 +41,7 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
             });
         }
         "SET" => {
-            check_len(&parts, 3, "SET requires 3 arguments,table, key, val")?;
+            check_len(&parts, 4, "SET requires 3 arguments,table, key, val")?;
             return Ok(Command::Put {
                 table: parts[1].to_string(),
                 key: parts[2].to_string(),
@@ -62,13 +62,13 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
             });
         }
         "DROP" => {
-            check_len(&parts, 1, "DROP requires 1 arguments,table_name")?;
+            check_len(&parts, 2, "DROP requires 1 arguments,table_name")?;
             return Ok(Command::DropTable {
                 table_name: parts[1].to_string(),
             });
         }
         "LIST" => {
-            check_len(&parts, 0, "LIST requires no arguments")?;
+            check_len(&parts, 1, "LIST requires no arguments")?;
             return Ok(Command::ListTables {});
         }
         other => {
@@ -95,7 +95,6 @@ fn check_len(parts: &[&str], expected_num: usize, err_msg: &str) -> Result<(), P
 
 #[cfg(test)]
 mod tests {
-    use crate::err_types::RustyDbErr;
 
     use super::*;
 

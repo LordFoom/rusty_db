@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::db::RustyDb;
+use crate::{command::parse, db::RustyDb};
 
 mod command;
 mod db;
@@ -22,11 +22,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         //check for commands that aren't sql
         match input.to_lowercase().as_str() {
             "exit" | "quit" | "q" => {
-                "See you later, Space Cowboy"
+                println!("See you later, Space Cowboy");
                 break;
             }
             "help" => {
-                println!("TODO print help");
+                print_help();
                 continue;
             }
             "" => {
@@ -35,11 +35,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             _ => {}
         }
 
-        match parse(input) {
-
+        match parse(&input) {
+            Ok(cmd) => match db.execute(cmd) {
+                Ok(result) => print!("{}", result),
+                Err(why) => eprintln!("ERROR: {}", why),
+            },
+            Err(why) => eprintln!("Parser error: {}", why),
         }
-
-
     }
-    Ok(());
+    Ok(())
+}
+
+fn print_help() {
+    println!("Available commands:");
+    println!("  CREATE <table>             - Create a new table");
+    println!("  DROP <table>               - Drop a table");
+    println!("  LIST                       - List all tables");
+    println!("  SET <table> <key> <value>  - Set a key-value pair");
+    println!("  GET <table> <key>          - Get a value by key");
+    println!("  DEL <table> <key>          - Delete a key");
+    println!("  help                       - Show this help");
+    println!("  exit                       - Exit the REPL");
 }

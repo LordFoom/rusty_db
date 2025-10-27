@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs, path::Path};
 
-use bincode::{Decode, Encode, config, decode_from_reader, encode_to_vec};
+use bincode::{Decode, Encode, config, encode_to_vec};
 
 use crate::{command::Command, err_types::RustyDbErr};
 type Result<T> = std::result::Result<T, RustyDbErr>;

@@ -13,11 +13,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut db = RustyDb::new(".rusty.db")?;
     loop {
         //main cli loop
-        println!("rustydb>> ");
+        print!("rustydb>> ");
         std::io::stdout().flush()?;
 
         let mut input = String::new();
         std::io::stdin().read_line(&mut input)?;
+        let input = input.trim();
 
         //check for commands that aren't sql
         match input.to_lowercase().as_str() {
@@ -29,18 +30,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 print_help();
                 continue;
             }
-            "" => {
-                continue;
-            }
-            _ => {}
-        }
-
-        match parse(&input) {
-            Ok(cmd) => match db.execute(cmd) {
-                Ok(result) => print!("{}", result),
-                Err(why) => eprintln!("ERROR: {}", why),
+            _ => match parse(&input) {
+                Ok(cmd) => match db.execute(cmd) {
+                    Ok(result) => print!("{}", result),
+                    Err(why) => eprintln!("ERROR: {}", why),
+                },
+                Err(why) => eprintln!("Parser error: {}", why),
             },
-            Err(why) => eprintln!("Parser error: {}", why),
         }
     }
     Ok(())

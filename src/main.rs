@@ -5,6 +5,7 @@ use crate::{command::parse, db::RustyDb};
 mod command;
 mod db;
 mod err_types;
+mod wal;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("RustyDB Sea Ally");
@@ -32,7 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             _ => match parse(&input) {
                 Ok(cmd) => match db.execute(cmd) {
-                    Ok(result) => print!("{}", result),
+                    Ok(result) => println!("{}", result),
                     Err(why) => eprintln!("ERROR: {}", why),
                 },
                 Err(why) => eprintln!("Parser error: {}", why),

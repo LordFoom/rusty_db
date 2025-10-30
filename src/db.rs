@@ -11,9 +11,28 @@ pub struct RustyDb {
     pub tables: HashMap<String, HashMap<String, String>>,
     ///DB location on the filesyystem
     pub file_path: String,
+    ///write ahead log path
+    pub wal_path: String,
 }
 
 impl RustyDb {
+    pub fn new(file_path: &str) -> Result<Self> {
+        let mut wal_path = format!("{}.wal", file_path);
+        let mut rusty_db = Self {
+            // data: HashMap::new(),
+            tables: HashMap::new(),
+            file_path: file_path.to_string(),
+            wal_path: wal_path.clone(),
+        };
+
+        if Path::new(file_path).exists() {
+            rusty_db.load_from_disk()?;
+        }
+
+        if Path::new(&wal_path).exists() {}
+        Ok(rusty_db)
+    }
+
     pub fn execute(&mut self, cmd: Command) -> Result<String> {
         match cmd {
             Command::Get { table, key } => {
@@ -44,17 +63,6 @@ impl RustyDb {
                 Ok(list_tables.join("\n"))
             }
         }
-    }
-    pub fn new(file_path: &str) -> Result<Self> {
-        let mut rusty_db = Self {
-            // data: HashMap::new(),
-            tables: HashMap::new(),
-            file_path: file_path.to_string(),
-        };
-        if Path::new(file_path).exists() {
-            rusty_db.load_from_disk()?;
-        }
-        Ok(rusty_db)
     }
 
     pub fn get(&self, table: &str, key: &str) -> Result<&String> {

@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs, path::Path};
 
 use bincode::{Decode, Encode, config, encode_to_vec};
 
-use crate::{command::Command, err_types::RustyDbErr};
+use crate::{command::Command, err_types::RustyDbErr, wal::WalEntry};
 type Result<T> = std::result::Result<T, RustyDbErr>;
 
 #[derive(Debug, Encode, Decode)]
@@ -16,6 +16,13 @@ pub struct RustyDb {
 }
 
 impl RustyDb {
+    pub fn write_wal(&mut self, entry: &WalEntry) -> Result<()> {
+        let config = config::standard();
+        let encoded = encode_to_vec(entry, config)
+            .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
+        Ok(())
+    }
+
     pub fn new(file_path: &str) -> Result<Self> {
         let mut wal_path = format!("{}.wal", file_path);
         let mut rusty_db = Self {
@@ -137,6 +144,12 @@ impl RustyDb {
                 .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
 
         self.tables = decoded;
+        Ok(())
+    }
+
+    ///Replay the wal to reconstruct data
+    pub fn replay_wal(&mut self) -> Result<()> {
+        let data = fs::read(&self.wal_path);
         Ok(())
     }
 }

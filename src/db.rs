@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs, path::Path};
 
-use bincode::{Decode, Encode, config, encode_to_vec};
+use bincode::{Decode, Encode, config, decode_from_slice, encode_to_vec};
 
 use crate::{command::Command, err_types::RustyDbErr, wal::WalEntry};
 type Result<T> = std::result::Result<T, RustyDbErr>;
@@ -149,7 +149,41 @@ impl RustyDb {
 
     ///Replay the wal to reconstruct data
     pub fn replay_wal(&mut self) -> Result<()> {
-        let data = fs::read(&self.wal_path);
+        let data = fs::read(&self.wal_path).map_err(|e| RustyDbErr::IoError(e.to_string()))?;
+
+        let mut offset = 0;
+        let config = config::standard();
+
+        while offset < data.len() {
+            //read length prefix
+            if offset + 4 > data.len() {
+                break; //incomplete entry at end of file?
+            }
+
+            let len = u32::from_le_bytes([
+                data[offset],
+                data[offset + 1],
+                data[offset + 2],
+                data[offset + 3],
+            ]) as usize;
+            offset += 4;
+            //check if we have the full entry
+            if offset + len > data.len() {
+                //incomplete final entry
+                break;
+            }
+
+            //decode the entry
+            let entry_data = &data[offset..offset + len];
+            let (entry, __): (WalEntry, usize) = decode_from_slice(entry_data, config)
+                .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
+            //apply the entry to in-memory state
+            self.apply_wal_entry(&entry)?;
+        }
+        Ok(())
+    }
+
+    pub fn apply_wal_entry(&mut self, entry: &WalEntry) -> Result<()> {
         Ok(())
     }
 }

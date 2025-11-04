@@ -185,18 +185,26 @@ impl RustyDb {
 
     pub fn apply_wal_entry(&mut self, entry: &WalEntry) -> Result<()> {
         match entry {
-            WalEntry::Put { table, key, val } => self
-                .tables
-                .entry(table.to_string())
-                .or_insert_with(HashMap::new())
-                .insert(key, val),
+            WalEntry::Put { table, key, val } => {
+                self.tables
+                    .entry(table.to_string())
+                    //we are lenient during replay_wal
+                    .or_insert_with(HashMap::new)
+                    .insert(key.to_string(), val.to_string());
+            }
             WalEntry::Delete { table, key } => {
-                if let Some(t) = self.tables.get(table) {
-                    table.remove(key)
+                if let Some(t) = self.tables.get_mut(table) {
+                    t.remove(key);
                 }
             }
-            WalEntry::CreateTable { table } => todo!(),
-            WalEntry::DropTable { table } => todo!(),
+            WalEntry::CreateTable { table } => {
+                self.tables
+                    .entry(table.to_string())
+                    .or_insert_with(HashMap::new);
+            }
+            WalEntry::DropTable { table } => {
+                self.tables.remove(table);
+            }
         }
         Ok(())
     }

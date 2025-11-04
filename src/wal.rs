@@ -1,8 +1,4 @@
-use std::fs;
-
 use bincode::{Decode, Encode};
-
-use crate::wal;
 
 ///Write Ahead Log entry
 #[derive(Debug, Clone, Encode, Decode)]

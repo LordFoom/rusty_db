@@ -184,6 +184,20 @@ impl RustyDb {
     }
 
     pub fn apply_wal_entry(&mut self, entry: &WalEntry) -> Result<()> {
+        match entry {
+            WalEntry::Put { table, key, val } => self
+                .tables
+                .entry(table.to_string())
+                .or_insert_with(HashMap::new())
+                .insert(key, val),
+            WalEntry::Delete { table, key } => {
+                if let Some(t) = self.tables.get(table) {
+                    table.remove(key)
+                }
+            }
+            WalEntry::CreateTable { table } => todo!(),
+            WalEntry::DropTable { table } => todo!(),
+        }
         Ok(())
     }
 }

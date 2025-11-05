@@ -81,42 +81,57 @@ impl RustyDb {
     }
 
     pub fn put(&mut self, table: String, key: String, val: String) -> Result<()> {
+        self.write_wal(&WalEntry::Put {
+            table: table.clone(),
+            key: key.clone(),
+            val: val.clone(),
+        })?;
         self.tables
             .get_mut(&table)
             .ok_or_else(|| RustyDbErr::TableNotFound(table))?
             .insert(key, val);
-        self.save_to_disk()?;
+        // self.save_to_disk()?;
         Ok(())
     }
 
     ///Delete a value from a table
     pub fn delete(&mut self, table: &str, key: &str) -> Result<String> {
+        self.write_wal(&WalEntry::Delete {
+            table: table.to_string(),
+            key: key.to_string(),
+        })?;
         let deleted = self
             .tables
             .get_mut(table)
             .ok_or_else(|| RustyDbErr::TableNotFound(table.to_string()))?
             .remove(key)
             .ok_or_else(|| RustyDbErr::KeyNotFound(key.to_string()))?;
-        self.save_to_disk()?;
+        // self.save_to_disk()?;
         Ok(deleted)
     }
 
     ///Create a table
-    pub fn create_table(&mut self, table_name: &str) -> Result<()> {
-        if self.tables.contains_key(table_name) {
-            return Err(RustyDbErr::TableExists(table_name.to_string()));
+    pub fn create_table(&mut self, table: &str) -> Result<()> {
+        self.write_wal(&WalEntry::CreateTable {
+            table: table.to_string(),
+        })?;
+        if self.tables.contains_key(table) {
+            return Err(RustyDbErr::TableExists(table.to_string()));
         }
-        self.tables.insert(table_name.to_string(), HashMap::new());
-        self.save_to_disk()?;
+        self.tables.insert(table.to_string(), HashMap::new());
+        // self.save_to_disk()?;
         Ok(())
     }
 
     ///Drop a table
-    pub fn drop_table(&mut self, table_name: &str) -> Result<()> {
-        if self.tables.contains_key(table_name) {
-            return Err(RustyDbErr::TableNotFound(table_name.to_string()));
+    pub fn drop_table(&mut self, table: &str) -> Result<()> {
+        self.write_wal(&WalEntry::DropTable {
+            table: table.to_string(),
+        })?;
+        if self.tables.contains_key(table) {
+            return Err(RustyDbErr::TableNotFound(table.to_string()));
         }
-        self.tables.remove(table_name);
+        // self.tables.remove(table);
         self.save_to_disk()?;
         Ok(())
     }

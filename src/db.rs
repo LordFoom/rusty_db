@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fs, path::Path};
+use std::{
+    collections::HashMap,
+    fs::{self, OpenOptions},
+    path::Path,
+};
 
 use bincode::{Decode, Encode, config, decode_from_slice, encode_to_vec};
 
@@ -20,6 +24,16 @@ impl RustyDb {
         let config = config::standard();
         let encoded = encode_to_vec(entry, config)
             .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
+        //write length prefix of 4 so we know where each entry ends
+        let len = encoded.len() as u32;
+        let let_bytes = len.to_le_bytes();
+        //open or create wal file
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.wal_path)
+            .map_err(|e| RustyDbErr::SerializationError(e.to_string()));
+
         Ok(())
     }
 

@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     fs::{self, OpenOptions},
+    io::Write as IoWrite,
     path::Path,
 };
 
@@ -26,13 +27,21 @@ impl RustyDb {
             .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
         //write length prefix of 4 so we know where each entry ends
         let len = encoded.len() as u32;
-        let let_bytes = len.to_le_bytes();
+        let len_bytes = len.to_le_bytes();
         //open or create wal file
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
             .open(&self.wal_path)
-            .map_err(|e| RustyDbErr::SerializationError(e.to_string()));
+            .map_err(|e| RustyDbErr::SerializationError(e.to_string()))?;
+
+        file.write_all(&len_bytes)
+            .map_err(|e| RustyDbErr::IoError(e.to_string()))?;
+        file.write_all(&encoded)
+            .map_err(|e| RustyDbErr::IoError(e.to_string()))?;
+
+        file.flush()
+            .map_err(|e| RustyDbErr::IoError(e.to_string()))?;
 
         Ok(())
     }

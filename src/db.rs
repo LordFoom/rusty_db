@@ -18,9 +18,31 @@ pub struct RustyDb {
     pub file_path: String,
     ///write ahead log path
     pub wal_path: String,
+    pub operations_since_checkpoint: usize,
 }
 
 impl RustyDb {
+    pub fn new(file_path: &str) -> Result<Self> {
+        let mut wal_path = format!("{}.wal", file_path);
+        let mut rusty_db = Self {
+            // data: HashMap::new(),
+            tables: HashMap::new(),
+            file_path: file_path.to_string(),
+            wal_path: wal_path.clone(),
+            operations_since_checkpoint: 0,
+        };
+
+        if Path::new(file_path).exists() {
+            rusty_db.load_from_disk()?;
+        }
+
+        if Path::new(&wal_path).exists() {
+            rusty_db.replay_wal()?;
+        }
+
+        Ok(rusty_db)
+    }
+
     pub fn write_wal(&mut self, entry: &WalEntry) -> Result<()> {
         let config = config::standard();
         let encoded = encode_to_vec(entry, config)
@@ -43,24 +65,14 @@ impl RustyDb {
         file.flush()
             .map_err(|e| RustyDbErr::IoError(e.to_string()))?;
 
-        Ok(())
-    }
+        self.operations_since_checkpoint += 1;
 
-    pub fn new(file_path: &str) -> Result<Self> {
-        let mut wal_path = format!("{}.wal", file_path);
-        let mut rusty_db = Self {
-            // data: HashMap::new(),
-            tables: HashMap::new(),
-            file_path: file_path.to_string(),
-            wal_path: wal_path.clone(),
-        };
-
-        if Path::new(file_path).exists() {
-            rusty_db.load_from_disk()?;
+        if self.operations_since_checkpoint > 1000 {
+            self.checkpoint()?;
+            self.operations_since_checkpoint = 0;
         }
 
-        if Path::new(&wal_path).exists() {}
-        Ok(rusty_db)
+        Ok(())
     }
 
     pub fn execute(&mut self, cmd: Command) -> Result<String> {
@@ -244,6 +256,14 @@ impl RustyDb {
                 self.tables.remove(table);
             }
         }
+        Ok(())
+    }
+
+    ///wal checkpointing
+    pub fn checkpoint(&mut self) -> Result<()> {
+        self.save_to_disk()?;
+        //truncate wal, cos it's save_to_disk now
+        fs::write(&self.wal_path, &[]).map_err(|e| RustyDbErr::IoError(e.to_string()))?;
         Ok(())
     }
 }
